@@ -1,0 +1,16 @@
+asyncio
+websockets
+psycopg2-binary
+sqlalchemy
+pandas
+docker
+geopandas
+shapely
+matplotlib
+seaborn
+folium
+pyarrow
+cloud-sql-python-connector[pg8000]
+numpy
+plotly
+branca

@@ -1,0 +1,17 @@
+navigational_status_code,navigational_status
+0,Underway using engine
+1,At anchor
+2,Not under command
+3,Restricted maneuverability
+4,Constrained by her draught
+5,Moored
+6,Aground
+7,Engaged in fishing
+8,Underway sailing
+9,"Reserved for future amendment of navigational status for ships carrying DG, HS or IMO hazard or pollutant category C, HSC"
+10,"Reserved for future amendment of navigational status for ships carrying DG, HS, MP or IMO hazard or pollutant category A, WIG"
+11,Power-driven vessel towing astern
+12,Power-driven vessel pushing ahead or towing alongside
+13,Reserved for future use
+14,"AIS-SART Active, AIS-MOB, AIS-EPIRB"
+15,Undefined

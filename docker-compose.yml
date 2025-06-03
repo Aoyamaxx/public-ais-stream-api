@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  cloud_sql_proxy:
+    image: gcr.io/cloudsql-docker/gce-proxy:1.28.1
+    container_name: cloud_sql_proxy
+    restart: always
+    command: >
+      /cloud_sql_proxy
+      -instances=north-sea-watch:europe-west4:ais-database=tcp:0.0.0.0:5432
+      -credential_file=/secrets/service_account.json
+    volumes:
+      - ./north-sea-watch-39a510f80808.json:/secrets/service_account.json:ro
+    networks:
+      - default
+
+  ais_collector:
+    build: .
+    container_name: ais_collector
+    restart: always
+    depends_on:
+      - cloud_sql_proxy
+    environment:
+      DB_NAME: "ais_data_collection"
+      DB_USER: "aoyamaxx"
+      DB_PASSWORD: "aoyamaxx"
+      DB_HOST: "cloud_sql_proxy"
+      DB_PORT: "5432"
+      API_KEY: "ad0495b8eeb54a58bb5caff12f815828d94d148c"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: ["python", "ais_collector.py"]
+    networks:
+      - default
+
+  lw_correction_service:
+    build: .
+    container_name: lw_correction_service
+    restart: always
+    depends_on:
+      - cloud_sql_proxy
+    environment:
+      DB_NAME: "ais_data_collection"
+      DB_USER: "aoyamaxx"
+      DB_PASSWORD: "aoyamaxx"
+      DB_HOST: "cloud_sql_proxy"
+      DB_PORT: "5432"
+      API_KEY: "ad0495b8eeb54a58bb5caff12f815828d94d148c"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: ["python", "lw_correction_service.py"]
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  data_processor:
+    build: .
+    container_name: ais_data_processor
+    restart: always
+    environment:
+      DB_NAME: "ais_data_collection"
+      DB_USER: "aoyamaxx"
+      DB_PASSWORD: "aoyamaxx"
+      DB_HOST: "cloud_sql_proxy"
+      DB_PORT: "5432"
+      RECREATE_TABLES: "false"
+      GOOGLE_APPLICATION_CREDENTIALS: "/app/north-sea-watch-39a510f80808.json"
+    volumes:
+      - .:/app
+    depends_on:
+      - cloud_sql_proxy
+    networks:
+      - ais_network
+
+  cloud_sql_proxy:
+    image: gcr.io/cloudsql-docker/gce-proxy:1.28.1
+    container_name: cloud_sql_proxy_processor
+    restart: always
+    command: >
+      /cloud_sql_proxy
+      -instances=north-sea-watch:europe-west4:ais-database=tcp:0.0.0.0:5432
+      -credential_file=/secrets/service_account.json
+    volumes:
+      - ./north-sea-watch-39a510f80808.json:/secrets/service_account.json:ro
+    networks:
+      - ais_network
+
+networks:
+  ais_network:
+    name: ais_network
+    driver: bridge

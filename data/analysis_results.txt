@@ -1,0 +1,62 @@
+Total unique ships: 8090
+Total positions recorded: 588432
+Average speed: 5.02 knots
+
+Ship Type Distribution:
+           imo_number  position_count
+ship_type                            
+70               2363       421297396
+80               1010       135994954
+79                615       124206939
+30                584       289751025
+52                502       631789695
+...               ...             ...
+57                  1          833879
+183                 1              29
+66                  1         2612135
+123                 1           92191
+128                 1          471742
+
+[93 rows x 2 columns]
+
+Top 10 Destinations:
+destination
+                        18713
+NLRTM                   12314
+ROTTERDAM               10540
+BEANR                    9222
+DEHAM                    9051
+HAMBURG                  7981
+ANTWERP                  4914
+BE ANR                   4451
+NL RTM                   3921
+NLRTM                    3472
+dtype: int64
+
+Hourly Activity:
+hour
+0     29680
+1     22860
+2     21090
+3     21910
+4     23093
+5     25540
+6     24537
+7     24506
+8     24293
+9     24152
+10    26135
+11    25096
+12    24939
+13    24975
+14    25452
+15    26450
+16    25663
+17    24875
+18    24775
+19    24042
+20    24404
+21    23849
+22    23316
+23    22800
+dtype: int64

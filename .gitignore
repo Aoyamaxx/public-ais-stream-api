@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+.conda/
+*.log
+data/unknown_ships.csv
+data/ship_data.csv
