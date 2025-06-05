@@ -4,3 +4,6 @@ __pycache__/
 *.log
 data/unknown_ships.csv
 data/ship_data.csv
+
+# Archive and report directories
+final_report/

@@ -1,202 +1,142 @@
-# AIS Data Collector with Cloud SQL
+# AIS Data Collection and Analysis System
 
-This project collects AIS (Automatic Identification System) data from ships in the North Sea and stores the data in Google Cloud SQL (PostgreSQL). It is designed to run in a Docker environment on a remote server or VM. Logs are accessible via Docker logs, and it is possible to query the AIS data directly in Cloud SQL for further analysis.
+This repository contains a comprehensive AIS (Automatic Identification System) data collection and analysis pipeline for monitoring ship activities in the North Sea region. The system collects real-time AIS data from ships, stores it in Google Cloud SQL, and provides extensive analysis capabilities focusing on scrubber-equipped vessels and pollution monitoring.
 
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Requirements](#requirements)
-- [Deployment to a Remote Server](#deployment-to-a-remote-server)
-- [Data Collection Process](#data-collection-process)
-- [Connecting to Cloud SQL](#connecting-to-cloud-sql)
-- [Stopping or Restarting the Collector](#stopping-or-restarting-the-collector)
+## System Architecture
 
-## 1. Project Overview
-- **Data Source**: AISStream.io WebSocket API (real-time AIS data).
-- **Collected Data**: Ship static information and movement data in the North Sea.
-- **Storage**: Google Cloud SQL for PostgreSQL.
-- **Deployment**: Docker (using Docker Compose) + Cloud SQL Auth Proxy + Any Cloud VM.
-- **Primary Tables**:
-  - `ships` / `ship_data` (for IMO > 0)
-  - `unknown_ships` (for ships with no valid IMO number)
-- **Cloud SQL Connection**: Refer to the example in `analysis.ipynb`, which demonstrates how to use the Cloud SQL Auth Proxy to connect to the database for further analysis.
+The system consists of three main components:
 
-## 2. Requirements
-- Docker and Docker Compose on remote server or VM.
-- Google Cloud SQL instance (PostgreSQL).
-- Cloud SQL Auth Proxy credentials:
-  - A Service Account JSON file with Cloud SQL Client permission.
-  - The Cloud SQL Admin API enabled in GCP project.
-- AIS API key from AISStream.io.
+### 1. Data Collection Services
 
-Verify Docker and Docker Compose installation:
+**AIS Collector Service** (`ais_collector.py`) - Real-time data collection from AISStream.io WebSocket API with geographic filtering using North Sea shapefiles. The collector stores ship static data and position reports in separate database tables for ships with valid IMO numbers, while handling vessels without IMO separately.
 
-```sh
-sudo docker --version
-```
-```sh
-sudo docker compose version
-```
+**Length-Width Correction Service** (`lw_correction_service.py`) - Provides automated data quality improvements by correcting ship dimension inconsistencies and maintaining data integrity across the database.
 
-## 3. Deployment to a Remote Server
+### 2. Data Processing Pipeline
 
-### Clone the Repository
+**Primary Data Processor** (`data_process/process_ais_data.py`) - Processes raw AIS data in configurable chunks to avoid memory constraints. The processor joins AIS data with ICCT/WFR scrubber databases to identify scrubber-equipped vessels and generates standardized datasets for analysis.
 
-```sh
-git clone https://github.com/NorthSeaWatch/ais-stream-api.git
-```
-```sh
-cd ais-stream-api
-```
+**Advanced Data Processor** (`data_process/data_process.py`) - Handles comprehensive data normalization including ship type code mapping, port information integration, and navigational status standardization. Supports both incremental updates and full database recreation modes.
 
-### Add Service Account JSON
+### 3. Analysis and Visualization
 
-- Generate and download Service Account key JSON file (e.g. `north-sea-watch-39a510f80808.json`) into the project root.
-- In the `docker-compose.yml`, update the volumes section so it mounts this JSON file inside the `cloud_sql_proxy` container.
+**Scrubber Analysis Visualizer** (`data_process/visualize_scrubber_data.py`) - Creates interactive visualizations including heatmaps showing spatial distribution of scrubber-equipped ships, Sankey diagrams for ship type and destination flows, and temporal analysis charts.
 
-### Edit Docker Compose Environment Variables
+**Pollution Analysis Engine** (`analyze_pollution.py`) - Implements regulatory compliance checking for scrubber discharge based on international maritime laws, port restrictions, and country-specific regulations. Calculates emission estimates considering different operational modes.
 
-In `docker-compose.yml` (or via environment variables), set the following:
+**Pollution Forecasting System** (`forecast_pollution.py`) - Uses machine learning models to predict future pollution levels by country using time series analysis with lag features and confidence intervals.
 
-```yaml
-environment:
-  DB_NAME: "DB_NAME"
-  DB_USER: "DB_USER"
-  DB_PASSWORD: "DB_PASSWORD"
-  DB_HOST: "cloud_sql_proxy"
-  DB_PORT: "5432"
-  API_KEY: "AIS_API_KEY"
-```
+## Database Schema
 
-Make sure `-instances=<PROJECT_ID>:<REGION>:<INSTANCE_NAME>=tcp:0.0.0.0:5432` in `cloud_sql_proxy` command matches Cloud SQL instance connection name.
+### Core Tables
 
-### Start the Collector
+**ships** - Static vessel information for ships with valid IMO numbers including vessel specifications and identifiers.
 
-```sh
-sudo docker compose up -d --build
-```
+**ship_data** - Dynamic position and operational data linked to valid IMO ships with timestamps, coordinates, and navigational parameters.
 
-- `-d` runs in detached mode.
+**unknown_ships** - Combined static and dynamic information for vessels without valid IMO numbers, maintaining data completeness.
 
-Check running containers:
+### Reference Tables
 
-```sh
-sudo docker compose ps
-```
+**ship_type_codes** - Standardized ship type classifications with descriptions and remarks.
 
-## 4. Data Collection Process
+**ports** - Port coordinates, country assignments, and scrubber discharge regulations.
 
-Once the Docker containers are running, the Python script:
+**navigational_status** - Standardized navigational status code mappings.
 
-- Connects to Cloud SQL instance through the Auth Proxy.
-- Creates or updates tables: `ships`, `ship_data`, and `unknown_ships`.
-- Connects to the AIS WebSocket API for the bounding box `[[50.0, -5.0], [61.0, 10.0]]`.
-- Continuously inserts or updates records based on IMO or stores unknown IMO data in `unknown_ships`.
+**icct_wfr_combined** - Integrated database of ships equipped with scrubber systems from ICCT and WFR sources.
 
-Logs can be view with:
+## Data Analysis Framework
 
-```sh
-sudo docker logs -f ais_python
-```
+### Primary Dataset
 
-OR
+The analysis framework utilizes `processed_ais_data_20250419_20250519_sampled_100.parquet` as the main data source for research and visualization. This dataset contains processed AIS records with scrubber identification, ship classifications, and temporal sampling for computational efficiency.
 
-```sh
-sudo docker compose logs -f python_app
-```
+### Analytical Capabilities
 
-## 5. Connecting to Cloud SQL
+**Scrubber Ship Analysis** - Comprehensive identification and tracking of vessels equipped with scrubber systems using cross-referenced maritime databases. Analysis includes spatial distribution patterns, operational behavior differences, and destination preferences.
 
-### Cloud SQL Query Editor
+**Pollution Monitoring** - Real-time assessment of scrubber discharge compliance based on vessel location, operational mode, and applicable maritime regulations. The system implements complex rule sets for different jurisdictions and port authorities.
 
-- If Google Cloud Console is directly accessible, navigate to **SQL → Instance → Query Editor**.
-- Enter database username/password.
-- Run queries, for example:
+**Temporal Pattern Analysis** - Time series analysis of ship movements, seasonal variations, and operational pattern changes. The system provides forecasting capabilities for pollution levels and vessel traffic patterns.
 
-```sql
-SELECT COUNT(*) FROM ships;
-SELECT * FROM ship_data ORDER BY timestamp_ais DESC LIMIT 10;
-SELECT COUNT(*) FROM unknown_ships WHERE imo_number = -1;
+**Geospatial Analysis** - Advanced spatial analysis using precise North Sea boundary definitions with shapefile-based geographic filtering. The system supports complex queries for vessel density, route analysis, and regional activity monitoring.
+
+## Deployment Configuration
+
+### Docker Infrastructure
+
+The system deploys using Docker Compose with three coordinated services:
+
+- **cloud_sql_proxy** - Secure connection management to Google Cloud SQL instance
+- **ais_collector** - Real-time AIS data collection and database insertion
+- **lw_correction_service** - Continuous data quality monitoring and correction
+
+### Service Management
+
+**Automated Management** (`manage_services.py`) - Comprehensive service lifecycle management with commands for starting, stopping, monitoring, and troubleshooting all system components.
+
+**Manual Control Scripts** - Direct shell scripts (`start_services.sh`, `stop_services.sh`) for system administration without Python dependencies.
+
+### Environment Configuration
+
+The system requires configuration of database credentials, AIS API keys, and Cloud SQL connection parameters through environment variables or Docker Compose configuration.
+
+## Requirements and Dependencies
+
+**Core Dependencies** - asyncio, websockets, psycopg2-binary, sqlalchemy, pandas, geopandas, shapely for data collection and processing.
+
+**Analysis Libraries** - plotly, folium, numpy, matplotlib, seaborn for visualization and statistical analysis.
+
+**Cloud Integration** - cloud-sql-python-connector, pyarrow for efficient data storage and cloud database connectivity.
+
+**Machine Learning** - scikit-learn components integrated into pollution forecasting algorithms.
+
+## Installation and Setup
+
+Clone the repository and navigate to the project directory. Ensure Docker and Docker Compose are installed on the target system. Place the Google Cloud service account JSON file in the project root directory.
+
+Configure environment variables in `docker-compose.yml` including database credentials, Cloud SQL instance connection string, and AIS API key. Verify the Cloud SQL instance connection name matches your Google Cloud project configuration.
+
+Start the system using the management interface:
+
+```bash
+python manage_services.py start
 ```
 
-### psql Command Line
+Monitor system status and logs:
 
-- Enable a public IP for instance and add client IP to the “Authorized networks” in Cloud SQL, or
-- Use the Cloud SQL Auth Proxy locally.
-
-Then connect:
-
-```sh
-psql --host=<YOUR_CLOUDSQL_IP/localhost> --port=5432 \
-     --dbname=YOUR_DB_NAME \
-     --username=YOUR_DB_USER
+```bash
+python manage_services.py status
+python manage_services.py logs --follow
 ```
 
-## 6. Stopping or Restarting the Collector
+## Data Processing Workflows
 
-### Stop all Docker containers:
+### Real-time Collection
 
-```sh
-sudo docker compose down
-```
+The AIS collector continuously receives vessel position reports and static data through WebSocket connections. Data undergoes immediate geographic filtering using North Sea boundary shapefiles before database insertion.
 
-This halts the AIS collector and the Cloud SQL Proxy. Data remains in Cloud SQL instance.
+### Batch Processing
 
-### Restart with:
+Historical data processing occurs in configurable time chunks to manage memory usage efficiently. The processor handles large datasets by implementing sampling strategies and incremental processing approaches.
 
-```sh
-sudo docker compose up -d
-```
+### Quality Assurance
 
-The collector will resume inserting data.
+The length-width correction service monitors data quality continuously, identifying and correcting dimensional inconsistencies in vessel specifications. The system maintains audit trails for all data modifications.
 
-## 7. Data Processing and Visualization
+## Visualization Outputs
 
-The repository includes scripts for processing the collected AIS data and creating visualizations for analysis, particularly focusing on ships with scrubber systems.
+**Interactive Maps** - HTML-based visualizations including radiation-style heatmaps for scrubber ship density, point maps with vessel details, and temporal animation capabilities.
 
-### Processing AIS Data
+**Flow Diagrams** - Sankey visualizations showing relationships between ship types, scrubber status, and destination ports with quantitative flow analysis.
 
-The `process_ais_data.py` script processes raw AIS data from the database, creating aggregated datasets for analysis:
+**Time Series Charts** - Interactive plots comparing scrubber versus non-scrubber vessel activities over time with trend analysis and forecasting.
 
-```sh
-python data_process/process_ais_data.py
-```
+**Pollution Reports** - Comprehensive country-level pollution analysis with regulatory compliance assessment and forecasting models.
 
-This script:
-- Connects to the database and extracts AIS data within a specified date range
-- Identifies ships with scrubbers by matching against ICCT/WFR databases
-- Processes data in chunks to avoid memory issues
-- Saves processed data to parquet files in the `data/` directory
-- Performs preliminary analyses on ship movements and generates basic statistics
+## Data Export and Integration
 
-### Generating Visualizations
+The system generates multiple data formats for analysis including Parquet files for efficient data storage, CSV exports for external integration, and HTML visualizations for interactive exploration.
 
-After processing the data, run the visualization script to generate interactive graphs and maps:
-
-```sh
-python data_process/visualize_scrubber_data.py
-```
-
-This script generates several visualizations:
-
-1. **Scrubber Ship Heatmap** (`data/scrubber_heatmap.html`): A radiation-style heatmap showing the spatial distribution and density of scrubber-equipped ships in the North Sea.
-
-2. **Ship Position Map** (`data/scrubber_points_map.html`): A map showing individual scrubber ship positions with popup information.
-
-3. **Sankey Diagrams** (`data/scrubber_sankey.html` and `data/non_scrubber_sankey.html`): Flow diagrams showing the relationships between ship types and destinations.
-
-4. **Time Series Plot** (`data/ship_counts_time_series.html`): Trends of scrubber vs. non-scrubber ships over time.
-
-### Viewing the Visualizations
-
-The visualizations are saved as HTML files and can be opened in any web browser:
-
-```sh
-open data/scrubber_heatmap.html  # On macOS
-# or use your browser to open the HTML files directly
-```
-
-The interactive visualizations allow:
-- Zooming and panning on maps
-- Toggling different layers
-- Viewing tooltips with additional information
-- Switching between map styles
+Analysis results support integration with external research platforms and regulatory reporting systems through standardized data formats and comprehensive metadata documentation.

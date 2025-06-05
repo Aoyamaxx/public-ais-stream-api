@@ -24,7 +24,7 @@ logger.info("Script started execution")
 
 try:
     # set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the path of the JSON file containing the service account key
-    credentials_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "north-sea-watch-39a510f80808.json"))
+    credentials_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "north-sea-watch-d8ad3753e506.json"))
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
     logger.info(f"Using credentials file: {credentials_path}")
     

@@ -15,7 +15,7 @@ if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
 # Set the environment variable for Google Cloud credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "north-sea-watch-39a510f80808.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "north-sea-watch-d8ad3753e506.json"
 
 # Database connection parameters
 DB_NAME = os.getenv("DB_NAME", "ais_data_collection")

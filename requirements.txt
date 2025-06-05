@@ -14,3 +14,7 @@ cloud-sql-python-connector[pg8000]
 numpy
 plotly
 branca
+scikit-learn
+requests
+zipfile36
+datetime

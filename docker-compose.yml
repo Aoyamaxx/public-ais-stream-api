@@ -10,7 +10,7 @@ services:
       -instances=north-sea-watch:europe-west4:ais-database=tcp:0.0.0.0:5432
       -credential_file=/secrets/service_account.json
     volumes:
-      - ./north-sea-watch-39a510f80808.json:/secrets/service_account.json:ro
+      - ./north-sea-watch-d8ad3753e506.json:/secrets/service_account.json:ro
     networks:
       - default
 

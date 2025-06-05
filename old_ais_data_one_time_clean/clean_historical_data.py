@@ -46,7 +46,7 @@ logger.info("Script started execution")
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Path to the service account key for Cloud SQL
-CREDENTIALS_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, "north-sea-watch-39a510f80808.json"))
+CREDENTIALS_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, "north-sea-watch-d8ad3753e506.json"))
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIALS_PATH
 logger.info(f"Using credentials file: {CREDENTIALS_PATH}")
 

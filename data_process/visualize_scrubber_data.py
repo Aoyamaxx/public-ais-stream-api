@@ -139,10 +139,45 @@ def create_sankey_diagram(df, is_scrubber=True):
         secondary_flows = secondary_flows.rename(columns={'secondary_destination': 'destination'})
         flow_data = pd.concat([flow_data, secondary_flows])
     
+    # Convert ship types to uppercase for display
+    display_ship_types = [ship_type.upper() for ship_type in top_ship_types]
+    display_destinations = list(top_destinations)
+    
     # Prepare labels and indices
-    labels = list(top_ship_types) + list(top_destinations)
-    ship_type_to_index = {ship: i for i, ship in enumerate(top_ship_types)}
-    destination_to_index = {dest: i + len(top_ship_types) for i, dest in enumerate(top_destinations)}
+    labels = display_ship_types + display_destinations
+    ship_type_to_index = {ship.upper(): i for i, ship in enumerate(top_ship_types)}
+    destination_to_index = {dest: i + len(display_ship_types) for i, dest in enumerate(display_destinations)}
+    
+    # Define consistent colors for ship types and destinations
+    ship_type_colors = {
+        'CARGO': '#1f77b4',  # Blue
+        'TANKER': '#ff7f0e',  # Orange
+        'OTHER TYPE': '#2ca02c',  # Green
+        'TUG': '#d62728',  # Red
+        'FISHING': '#9467bd',  # Purple
+        'PASSENGER': '#e377c2',  # Pink
+    }
+    
+    destination_colors = {
+        'ROTTERDAM': '#8c564b',  # Brown
+        'AMSTERDAM': '#e377c2',  # Pink
+        'ANTWERP': '#7f7f7f',  # Gray
+        'HAMBURG': '#bcbd22',  # Yellow-Green
+        'LONDON': '#17becf',  # Cyan
+        'FISHING': '#7f7f7f',  # Gray,
+        'BREMERHAVEN': '#c8491f' # Orange
+    }
+    
+    # Create node colors list
+    node_colors = []
+    for label in labels:
+        if label in ship_type_colors:
+            node_colors.append(ship_type_colors[label])
+        elif label in destination_colors:
+            node_colors.append(destination_colors[label])
+        else:
+            # Fallback color for any unexpected labels
+            node_colors.append('#636363')
     
     # Create source, target, and value lists
     source = []
@@ -150,7 +185,7 @@ def create_sankey_diagram(df, is_scrubber=True):
     values = []
     
     for _, row in flow_data.iterrows():
-        st = row['ship_type']
+        st = row['ship_type'].upper()  # Convert to uppercase for matching
         dest = row['destination']
         if st in ship_type_to_index and dest in destination_to_index:
             source.append(ship_type_to_index[st])
@@ -164,21 +199,26 @@ def create_sankey_diagram(df, is_scrubber=True):
             thickness=20,
             line=dict(color="black", width=0.5),
             label=labels,
-            color=['red' if is_scrubber else 'lightblue'] * len(labels)
+            color=node_colors
         ),
         link=dict(
             source=source,
             target=target,
             value=values,
-            color=['rgba(255,0,0,0.4)' if is_scrubber else 'rgba(173,216,230,0.4)'] * len(source)
+            color=['rgba(128,128,128,0.4)'] * len(source)  # Semi-transparent gray for links
         )
     )])
     
     title = "Sankey Diagram: Top Ship Types to Top Destinations (Scrubber Ships)" if is_scrubber else "Sankey Diagram: Top Ship Types to Top Destinations (Non-Scrubber Ships)"
-    fig.update_layout(title_text=title, font_size=10)
+    fig.update_layout(
+        title_text=title,
+        font_size=18,  # Increased font size
+        title_font_size=24,  # Even larger font size for title
+        font_family="Arial"
+    )
     
     # Save the figure
-    output_file = 'data/scrubber_sankey.html' if is_scrubber else 'data/non_scrubber_sankey.html'
+    output_file = 'graphs/scrubber_sankey.html' if is_scrubber else 'graphs/non_scrubber_sankey.html'
     fig.write_html(output_file)
     logging.info(f"Saved Sankey diagram to {output_file}")
 
@@ -227,7 +267,7 @@ def create_time_series_plot(df):
     
     # Save the figure
     fig.write_html('data/ship_counts_time_series.html')
-    logging.info("Saved time series plot to data/ship_counts_time_series.html")
+    logging.info("Saved time series plot to graphs/ship_counts_time_series.html")
 
 def create_spatial_map(df):
     """Create spatial distribution map with radiation-style heatmap of scrubber ships"""
@@ -317,7 +357,7 @@ def create_spatial_map(df):
               bottom: 50px; left: 50px; width: 220px; 
               border: 2px solid grey; z-index: 9999; background-color: rgba(255,255,255,0.8);
               padding: 10px; font-size: 14px;">
-      <p style="text-align:center; margin:0; font-weight:bold;">Scrubber Ship Density</p>
+      <p style="text-align:center; margin:0; font-weight:bold;">Scrubber Discharge</p>
       <div style="display: flex; align-items: center; margin-top: 8px;">
         <div style="flex-grow: 1; height: 20px; background: linear-gradient(to right, blue, lime, yellow, red);"></div>
       </div>
@@ -325,14 +365,14 @@ def create_spatial_map(df):
         <span>Low</span>
         <span>High</span>
       </div>
-      <p style="margin-top: 10px; font-size: 12px;">Shows radiation pattern of <br>scrubber-equipped ships in<br>the North Sea region.</p>
+      <p style="margin-top: 10px; font-size: 12px;">Shows radiation pattern of <br>scrubber discharge in<br>the North Sea region.</p>
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
     
     # Save the heatmap
-    m.save('data/scrubber_heatmap.html')
-    logging.info("Saved radiation-style heatmap to data/scrubber_heatmap.html")
+    m.save('data/imputed_scrubber_heatmap.html')
+    logging.info("Saved radiation-style heatmap to graphs/scrubber_heatmap.html")
     
     # Create an alternative visualization with markers
     marker_map = folium.Map(
@@ -366,12 +406,12 @@ def create_spatial_map(df):
               bottom: 50px; left: 50px; width: 180px; 
               border: 2px solid grey; z-index: 9999; background-color: white;
               padding: 10px; font-size: 14px;">
-      <p><strong>Scrubber Ship Locations</strong></p>
+      <p><strong>Scrubber Discharge Locations</strong></p>
       <p><span style="color: red;">●</span> Ships with Scrubbers</p>
     </div>
     """
     marker_map.get_root().html.add_child(folium.Element(marker_legend))
-    marker_map.save('data/scrubber_points_map.html')
+    marker_map.save('data/imputed_scrubber_points_map.html')
     logging.info("Saved point map to data/scrubber_points_map.html")
 
 def analyze_destinations(df):

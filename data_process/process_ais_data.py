@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Database connection setup
 def get_db_connection():
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "north-sea-watch-39a510f80808.json"
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "north-sea-watch-d8ad3753e506.json"
     
     DB_NAME = os.getenv("DB_NAME", "ais_data_collection")
     DB_USER = os.getenv("DB_USER", "aoyamaxx")
